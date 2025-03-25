@@ -3,7 +3,14 @@
 #include <stdlib.h>
 #include <SDL2/SDL.h>
 #include <math.h>
-#include "main.h"
+#include "../main.h"
+
+extern SDL_Renderer *renderer;
+extern SDL_Window *window;
+extern int sound_timer;
+extern int delay_timer;
+extern int keyboard[16];
+extern int** display;
 
 uint8 memory[0xFFF];
 uint8 stack[0xFFF];
@@ -162,7 +169,7 @@ void execute(uint16 cmd){
             for(int j=0;j < 8 && !drawFlag;j++){
                 if(memory[I+i] & drawMask){
                     if(display[registers[Y] + i][registers[X]] & drawMask)
-                        registers[0xF] = 1
+                        registers[0xF] = 1;
                         drawFlag = 1;
                 }
                 drawMask = drawMask << 1;

@@ -1,14 +1,20 @@
 #include "main.h"
-#include <SDL2/SDL.h>
 #include <stdio.h>
+#include "gfx/gfx.h"
+#include <SDL2/SDL.h>
 
 
-
-int sbuffo=0;
+uint8 keyboard[16];
+//Timers, so basic they don't even need to be a thread
+int delay_timer;
+int sound_timer;
+uint8 display[32][64];
 
 SDL_Window *window;
 SDL_Renderer *renderer;
-int running,speed = SPEED;
+
+
+int running;
 void draw();
 
 int main(int argc, char** argv){
@@ -22,7 +28,6 @@ int main(int argc, char** argv){
     SDL_SetWindowPosition(window,200,200);
     draw();
  
-
     running = 1;
     while(running){
         SDL_Event event;
@@ -81,7 +86,7 @@ int main(int argc, char** argv){
 
                     break;
             }
-            SDL_Delay(speed);
+            SDL_Delay(SPEED);
             delay_timer--;
             sound_timer--;
             // execute(PC)
@@ -93,36 +98,7 @@ int main(int argc, char** argv){
     return 0;
 }
 
-void FillBackground(){
-    SDL_SetRenderDrawColor(renderer, 112, 44, 255, 0);
-    SDL_RenderFillRect(renderer, NULL);
-    SDL_RenderPresent(renderer);
-}
-void drawSquare(int x,int y,int set){
-    SDL_Rect rect={x,y,SCALE,SCALE};
-    if (set)
-        SDL_SetRenderDrawColor(renderer,255, 255, 255,0);
-    else 
-    SDL_SetRenderDrawColor(renderer,0, 0, 0 ,0);
-    SDL_RenderFillRect(renderer,&rect);
-    SDL_RenderPresent(renderer);
 
-}
-void draw(){
-    //My display is organized as a bit array
-    uint8 drawMask;
-    for(int x=0;x<8;x++){
-        for(int y=0;y<32;y++){
-            drawMask=0x80;
-            for (int b=0;b<8;b++){
-                if(display[y][x]&drawMask)
-                    drawSquare(x*SCALE + b * SCALE,y*SCALE,1);
-                else drawSquare(x*SCALE + b * SCALE,y*SCALE,0);
-                drawMask=drawMask>>1;
-            }
-        }
-    }
-}
 
 void HALT(){
     SDL_Quit();
