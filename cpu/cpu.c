@@ -4,29 +4,37 @@
 #include <SDL2/SDL.h>
 #include <math.h>
 #include "../main.h"
+#include "../gfx/gfx.h"
 
 extern SDL_Renderer *renderer;
 extern SDL_Window *window;
 extern int sound_timer;
 extern int delay_timer;
 extern int keyboard[16];
-extern int** display;
+extern uint8** display;
 
-uint8 memory[0xFFF];
+uint8 *memory;
 uint8 stack[0xFFF];
 uint16 SP;
 uint8 registers[0xF];
 uint16 PC;
+
 uint16 I;
 uint8 NN;
 uint8 N;
 uint8 drawMask;
 uint8 drawFlag;
 
-void execute(uint16 cmd){
+void init_CPU(uint8* romMem){
+    PC = 0x200;
+    memory=romMem;
+}
+
+void execute(){
     uint8 X,Y,O;
-    //cmd>>15 to get MSB
-    switch (cmd>>15)
+    uint16 cmd = (memory[PC]<<8) | (memory[PC+1]);
+
+    switch (cmd>>12)
     {
     case 0x0:
         //I will ignore 0x0NNN
@@ -74,17 +82,17 @@ void execute(uint16 cmd){
         if(registers[X]==registers[Y]){
             PC+=2;
         }
-    case 6:
+    case 0x6:
         //6XNN	Const	Vx = NN
         X = (cmd & 0xF00)>>8;
         registers[X]=cmd & 0xFF;
     break;
-    case 7:
+    case 0x7:
         //7XNN	Const	Vx += NN
         X = (cmd & 0xF00)>>8;
         registers[X]+=cmd & 0xFF;
     break;
-    case 8:
+    case 0x8:
         //8XYO
         X = (cmd & 0xF00)>>8;
         Y = (cmd & 0xF0)>>4;
@@ -132,7 +140,7 @@ void execute(uint16 cmd){
         break;
 
         default:
-            printf("ERROR: OP CODE 0x8XYO NOT RECOGNIZED");
+            printf("ERROR: OP CODE %X NOT RECOGNIZED",cmd);
             HALT();
             break;
         }
@@ -148,7 +156,7 @@ void execute(uint16 cmd){
     break;
 
     case 0xB:
-        PC=registers[0]+ cmd & 0xFFF;
+        PC=registers[0]+ (cmd & 0xFFF);
     break;
     
     case 0xC:
@@ -175,7 +183,8 @@ void execute(uint16 cmd){
                 drawMask = drawMask << 1;
             }
         }
-       
+        //Make the draw function in main redraw the screen
+        set_DrawFlag();
 
     break;
     case 0xE:
@@ -192,7 +201,7 @@ void execute(uint16 cmd){
                 PC+=2;
             break;
         }
-        printf("ERROR: OP CODE 0xE NOT RECOGNIZED");
+        printf("ERROR: OP CODE %X NOT RECOGNIZED",cmd);
     break;
 
     case 0xF:
@@ -262,8 +271,10 @@ void execute(uint16 cmd){
 
     break;
     default:
-        printf("ERROR: OP CODE NOT RECOGNIZED");
+        printf("ERROR: OP CODE %X NOT RECOGNIZED",cmd);
         HALT();
         break;
     }
+    //Go to next Instruction
+    PC+=2;
 }

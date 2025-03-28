@@ -5,7 +5,14 @@
 extern SDL_Renderer *renderer;
 extern SDL_Window *window;
 extern uint8 display[32][64];
+int dFlag;
 
+void init_gfx(){
+    dFlag=0;
+}
+void set_DrawFlag(){
+    dFlag=1;
+}
 void FillBackground(){
     SDL_SetRenderDrawColor(renderer, 112, 44, 255, 0);
     SDL_RenderFillRect(renderer, NULL);
@@ -22,6 +29,8 @@ void drawSquare(int x,int y,int set){
 
 }
 void draw(){
+    if(dFlag)
+        return;
     //My display is organized as a bit array
     uint8 drawMask;
     for(int x=0;x<8;x++){
@@ -35,4 +44,5 @@ void draw(){
             }
         }
     }
+    dFlag=0;
 }

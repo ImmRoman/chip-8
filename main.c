@@ -1,32 +1,40 @@
 #include "main.h"
 #include <stdio.h>
 #include "gfx/gfx.h"
+#include "cpu/cpu.h"
 #include <SDL2/SDL.h>
-
 
 uint8 keyboard[16];
 //Timers, so basic they don't even need to be a thread
 int delay_timer;
 int sound_timer;
+
 uint8 display[32][64];
+char romToRead[20]="../BLINKY";
 
 SDL_Window *window;
 SDL_Renderer *renderer;
 
 
 int running;
-void draw();
 
 int main(int argc, char** argv){
-    if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) < 0){
+    if(SDL_Init(SDL_INIT_VIDEO) < 0){
         printf("Error: SDL failed to initialize\nSDL Error: '%s'\n", SDL_GetError());
         return 1;
     }
-
+    //Load Rom
+    rom_t ROM = calloc(1,sizeof(rom_t));
+    loadRom(romToRead,ROM);
+    //Init CPU
+    init_CPU(ROM->mem);
+    
+    //Init gfx
+    init_gfx();
+    
     //Game Window
     SDL_CreateWindowAndRenderer(SCREEN_WIDTH*SCALE , SCREEN_HEIGHT*SCALE,0,&window,&renderer);
     SDL_SetWindowPosition(window,200,200);
-    draw();
  
     running = 1;
     while(running){
@@ -35,12 +43,6 @@ int main(int argc, char** argv){
             switch(event.type){
                 case SDL_QUIT:
                     running = 0;
-                    break;
-
-                case SDL_MOUSEMOTION:
-                    //printf("We got a motion event.\n");
-                    //printf("Current mouse position is: (%d, %d)\n", event.motion.x, event.motion.y);
-      
                     break;
 
                 case SDL_KEYUP:
@@ -86,11 +88,10 @@ int main(int argc, char** argv){
 
                     break;
             }
-            SDL_Delay(SPEED);
+       
             delay_timer--;
             sound_timer--;
-            // execute(PC)
-            //PC+=2
+            execute();
             draw();
         }
     }
@@ -98,7 +99,20 @@ int main(int argc, char** argv){
     return 0;
 }
 
+void loadRom(char* rom,rom_t newROM){
+    FILE* f;
+    f = fopen(rom,"rb");
 
+    fseek(f,0,SEEK_END);
+    newROM -> dim = ftell(f);
+    fseek(f,0,SEEK_SET);
+
+    newROM->mem = malloc(sizeof(uint8) * 4096); 
+
+    fread(newROM->mem,sizeof(uint8),newROM->dim,f);
+    
+    fclose(f);
+}
 
 void HALT(){
     SDL_Quit();
