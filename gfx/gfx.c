@@ -13,6 +13,14 @@ void init_gfx(){
 void set_DrawFlag(){
     dFlag=1;
 }
+void clear_DrawFlag()
+{
+    dFlag = 0;
+}
+int get_DrawFlag()
+{
+   return dFlag;
+}
 void FillBackground(){
     SDL_SetRenderDrawColor(renderer, 112, 44, 255, 0);
     SDL_RenderFillRect(renderer, NULL);
@@ -24,25 +32,29 @@ void drawSquare(int x,int y,int set){
         SDL_SetRenderDrawColor(renderer,255, 255, 255,0);
     else 
     SDL_SetRenderDrawColor(renderer,0, 0, 0 ,0);
+    
     SDL_RenderFillRect(renderer,&rect);
     SDL_RenderPresent(renderer);
 
 }
+//BRODA WADSAD
 void draw(){
-    if(dFlag)
+    // Do I have to draw?
+    if(!dFlag)
         return;
     //My display is organized as a bit array
     uint8 drawMask;
+    // 8 pixel wide sprites
     for(int x=0;x<8;x++){
         for(int y=0;y<32;y++){
-            drawMask=0x80;
+            drawMask = 0x80;
             for (int b=0;b<8;b++){
-                if(display[y][x]&drawMask)
+                if(display[y][x] & drawMask)
                     drawSquare(x*SCALE + b * SCALE,y*SCALE,1);
                 else drawSquare(x*SCALE + b * SCALE,y*SCALE,0);
                 drawMask=drawMask>>1;
             }
         }
     }
-    dFlag=0;
+    clear_DrawFlag();
 }

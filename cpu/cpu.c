@@ -11,9 +11,10 @@ extern SDL_Window *window;
 extern int sound_timer;
 extern int delay_timer;
 extern int keyboard[16];
-extern uint8** display;
+extern uint8 display[32][64];
 
 uint8 *memory;
+int memSize;
 uint8 stack[0xFFF];
 uint16 SP;
 uint8 registers[0xF];
@@ -24,16 +25,18 @@ uint8 NN;
 uint8 N;
 uint8 drawMask;
 uint8 drawFlag;
-
-void init_CPU(uint8* romMem){
+uint8 caca = 1;
+void init_CPU(uint8* romMem, int size){
     PC = 0x200;
     memory=romMem;
+    memSize = size;
 }
 
 void execute(){
+    ASSERT(PC < memSize);
     uint8 X,Y,O;
     uint16 cmd = (memory[PC]<<8) | (memory[PC+1]);
-
+    printf("%x - ADDR: %x\n",cmd,PC);
     switch (cmd>>12)
     {
     case 0x0:
@@ -52,6 +55,7 @@ void execute(){
     case 0x1:
         //Jump to address 1NNN
         PC=cmd & 0xFFF;
+        return;
     break;
     case 0x2:
         //Call subroutine at 2NNN
@@ -59,7 +63,8 @@ void execute(){
         stack[SP]=PC >> 8;
         stack[SP+1]=PC & 0xFF;
         SP += 2;
-        PC = cmd & 0xFFF;
+        PC = (cmd & 0xFFF);
+        return; // We don't want to increment PC after a jump
     break;
     case 0x3:
         //3XNN	Cond	if (Vx == NN)
@@ -168,25 +173,31 @@ void execute(){
         X = (cmd >> 8) & 0xF;
         Y = (cmd >> 4) & 0xF;
         N = cmd & 0xF;
-        drawFlag=0;
-
-        //Display draw(Vx, Vy, N), attento agli errori
+        //Display draw(Vx, Vy, N rows) 
+        int flip = 0;
         for (int i = 0; i < N; i++){
             drawMask=0x1;
             display[registers[Y] + i][registers[X]] ^= memory[I+i];
             for(int j=0;j < 8 && !drawFlag;j++){
                 if(memory[I+i] & drawMask){
-                    if(display[registers[Y] + i][registers[X]] & drawMask)
-                        registers[0xF] = 1;
-                        drawFlag = 1;
+                    if(display[registers[Y] + i][registers[X]] & drawMask){
+                        registers[0xF] = 1; //VF = 1
+                        flip = 1;
+                    }
+                    if(display[registers[Y] + i][registers[X]]==1){
+                        printf("BASBDJASBDJBSADJB CAAZZZZZO CASCSAC");
+                    }
+                    // We need to redraw the screen
+                    set_DrawFlag();
                 }
                 drawMask = drawMask << 1;
             }
         }
-        //Make the draw function in main redraw the screen
-        set_DrawFlag();
-
+        if(flip) 
+            registers[0xF] = 0;
+    
     break;
+
     case 0xE:
         X = (cmd & 0xF00)>>8;
 

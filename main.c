@@ -1,16 +1,16 @@
 #include "main.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include "gfx/gfx.h"
 #include "cpu/cpu.h"
 #include <SDL2/SDL.h>
-
 uint8 keyboard[16];
 //Timers, so basic they don't even need to be a thread
 int delay_timer;
 int sound_timer;
 
 uint8 display[32][64];
-char romToRead[20]="../BLINKY";
+char romToRead[20] = "../test_opcode.8o";
 
 SDL_Window *window;
 SDL_Renderer *renderer;
@@ -27,7 +27,7 @@ int main(int argc, char** argv){
     rom_t ROM = calloc(1,sizeof(rom_t));
     loadRom(romToRead,ROM);
     //Init CPU
-    init_CPU(ROM->mem);
+    init_CPU(ROM->mem,ROM->dim);
     
     //Init gfx
     init_gfx();
@@ -99,15 +99,26 @@ int main(int argc, char** argv){
     return 0;
 }
 
+void ASSERT(int phrase){
+    if(!phrase){
+        printf("Error in assertion");
+        exit(0);
+    }
+}
 void loadRom(char* rom,rom_t newROM){
     FILE* f;
     f = fopen(rom,"rb");
 
+    if(f == NULL){
+        printf("Errore di lettura rom: %s",rom);
+        exit(0);
+    }
+    
     fseek(f,0,SEEK_END);
     newROM -> dim = ftell(f);
     fseek(f,0,SEEK_SET);
 
-    newROM->mem = malloc(sizeof(uint8) * 4096); 
+    newROM->mem = calloc(sizeof(uint8), 4096); 
 
     fread(newROM->mem,sizeof(uint8),newROM->dim,f);
     

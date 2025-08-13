@@ -5,5 +5,17 @@
         "sdl.h": "c",
         "gfx.h": "c"
     },
-    "C_Cpp.errorSquiggles": "disabled"
+    "C_Cpp.errorSquiggles": "disabled",
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "c:\\Users\\marco\\Desktop\\Chip8",
+            "binaryPath": "c:\\Users\\marco\\Desktop\\Chip8\\main.exe",
+            "binaryArgs": []
+        },
+        {
+            "cwd": "c:\\Users\\marco\\Desktop\\Chip8",
+            "binaryPath": "c:\\Users\\marco\\Desktop\\Chip8\\chip",
+            "binaryArgs": []
+        }
+    ]
 }

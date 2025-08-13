@@ -1,3 +1,3 @@
 
 void execute();
-void init_CPU(unsigned char* romMem);
+void init_CPU(unsigned char *romMem, int size);

@@ -4,7 +4,7 @@
 #define SPEED 10
 
 typedef unsigned char uint8;
-typedef short uint16;
+typedef unsigned short uint16;
 typedef struct{
     uint8* mem;
     uint16 dim;
@@ -15,3 +15,4 @@ void FillBackground();
 void drawSquare(int x,int y,int set);
 void HALT();
 void loadRom(char* rom,rom_t newROM);
+void ASSERT(int phrase);
