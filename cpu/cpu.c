@@ -36,7 +36,9 @@ void execute(){
     ASSERT(PC < memSize);
     uint8 X,Y,O;
     uint16 cmd = (memory[PC]<<8) | (memory[PC+1]);
+    cmd = 0xDAA3;
     printf("%x - ADDR: %x\n",cmd,PC);
+
     switch (cmd>>12)
     {
     case 0x0:
@@ -169,32 +171,37 @@ void execute(){
         NN = cmd & 0xFF;
         registers[X] = (rand() % 256) & NN;
     break;
+    // DA OTTIMIZZARE ASSOLUTAMENTE
     case 0xD:
         X = (cmd >> 8) & 0xF;
         Y = (cmd >> 4) & 0xF;
         N = cmd & 0xF;
         //Display draw(Vx, Vy, N rows) 
         int flip = 0;
+        uint8 oldPixel = 0, sprite = 0, value = 0;
+
         for (int i = 0; i < N; i++){
-            drawMask=0x1;
-            display[registers[Y] + i][registers[X]] ^= memory[I+i];
-            for(int j=0;j < 8 && !drawFlag;j++){
-                if(memory[I+i] & drawMask){
-                    if(display[registers[Y] + i][registers[X]] & drawMask){
-                        registers[0xF] = 1; //VF = 1
+            //memory[I + i] = 0xFF; //testa lo switch completo dei colori
+            sprite = memory[I + i];
+            for (int j = 0; j < 8; j++)
+            {
+                oldPixel = display[registers[Y] + i][registers[X + j]];
+                value = (0x80>>j) & sprite;
+                if(value)
+                    display[registers[Y] + i][registers[X] + j] ^= 1;
+                else
+                    display[registers[Y] + i][registers[X] + j] ^= 0;
+                if(!flip){
+                    if (oldPixel != display[registers[Y] + i][registers[X] + j]){
                         flip = 1;
+                        registers[0xF] = 0;
                     }
-                    if(display[registers[Y] + i][registers[X]]==1){
-                        printf("BASBDJASBDJBSADJB CAAZZZZZO CASCSAC");
-                    }
-                    // We need to redraw the screen
-                    set_DrawFlag();
                 }
-                drawMask = drawMask << 1;
             }
         }
-        if(flip) 
+        if(!flip) 
             registers[0xF] = 0;
+        else set_DrawFlag();
     
     break;
 
