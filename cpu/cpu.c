@@ -36,8 +36,9 @@ void execute(){
     ASSERT(PC < memSize);
     uint8 X,Y,O;
     uint16 cmd = (memory[PC]<<8) | (memory[PC+1]);
-    cmd = 0xDAA3;
-    printf("%x - ADDR: %x\n",cmd,PC);
+
+    printf("\r%x - ADDR: %x",cmd,PC);
+    fflush(stdout);
 
     switch (cmd>>12)
     {
@@ -48,7 +49,7 @@ void execute(){
             FillBackground();
         }
         else{
-            //return
+            //return from subroutine
             PC=stack[SP]<<8 + stack[SP+1]; //Big Eldian
             SP -=2;
         }
@@ -171,7 +172,7 @@ void execute(){
         NN = cmd & 0xFF;
         registers[X] = (rand() % 256) & NN;
     break;
-    // DA OTTIMIZZARE ASSOLUTAMENTE
+
     case 0xD:
         X = (cmd >> 8) & 0xF;
         Y = (cmd >> 4) & 0xF;
@@ -187,16 +188,15 @@ void execute(){
             {
                 oldPixel = display[registers[Y] + i][registers[X + j]];
                 value = (0x80>>j) & sprite;
-                if(value)
+                if(value){
                     display[registers[Y] + i][registers[X] + j] ^= 1;
-                else
-                    display[registers[Y] + i][registers[X] + j] ^= 0;
-                if(!flip){
-                    if (oldPixel != display[registers[Y] + i][registers[X] + j]){
-                        flip = 1;
-                        registers[0xF] = 0;
+                    flip = 1;
+                    if(oldPixel){
+                        registers[0xF] = 1;
                     }
                 }
+                else
+                    display[registers[Y] + i][registers[X] + j] ^= 0;
             }
         }
         if(!flip) 

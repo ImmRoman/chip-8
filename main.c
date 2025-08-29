@@ -85,15 +85,14 @@ int main(int argc, char** argv){
 
                 break;
                 default:
-
-                    break;
+                
+                break;
             }
-       
-            delay_timer--;
-            sound_timer--;
-            execute();
-            draw();
         }
+        delay_timer--;
+        sound_timer--;
+        execute();
+        draw();
     }
 
     return 0;

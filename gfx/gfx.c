@@ -34,22 +34,20 @@ void drawSquare(int x,int y,int set){
     SDL_SetRenderDrawColor(renderer,0, 0, 0 ,0);
     
     SDL_RenderFillRect(renderer,&rect);
-    SDL_RenderPresent(renderer);
-
 }
+
 void draw(){
     // Do I have to draw?
     if(!dFlag)
         return;
+    drawSquare(11, 11, 1);
 
     // 8 pixel wide sprites
     for(int x=0;x<64;x++){
         for(int y=0;y<32;y++){
-            if(display[y][x])
-                drawSquare(x*SCALE ,y*SCALE,1);
-            else drawSquare(x*SCALE ,y*SCALE,0);
+            drawSquare(x,y,display[y][x]);
             }
         }
-    
+    SDL_RenderPresent(renderer);
     clear_DrawFlag();
 }
