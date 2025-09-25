@@ -1,6 +1,8 @@
 #include "cpu.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
 #include <SDL2/SDL.h>
 #include <math.h>
 #include "../main.h"
@@ -13,31 +15,30 @@ extern int delay_timer;
 extern int keyboard[16];
 extern uint8 display[32][64];
 
-uint8 *memory;
-int memSize;
+uint8 memory[0xFFF],memSize;
 uint8 stack[0xFFF];
 uint16 SP;
 uint8 registers[0xF];
 uint16 PC;
 
-uint16 I;
-uint8 NN;
-uint8 N;
-uint8 drawMask;
-uint8 drawFlag;
-uint8 caca = 1;
-void init_CPU(uint8* romMem, int size){
+uint16 I, N, NN;
+uint8 drawMask, drawFlag;
+
+void init_CPU(rom_t rom)
+{
     PC = 0x200;
-    memory=romMem;
-    memSize = size;
+    for(int i = 0x0 ; i<=0xF; i++){
+        registers[i] = 0;
+    }
+    memcpy(&memory[0x200],rom->mem,rom->dim);
+    memSize = 0x200 + rom->dim;
 }
 
 void execute(){
-    ASSERT(PC < memSize);
     uint8 X,Y,O;
     uint16 cmd = (memory[PC]<<8) | (memory[PC+1]);
 
-    printf("\r%x - ADDR: %x",cmd,PC);
+    printf("\r%x - ADDR: %x   ",cmd,PC);
     fflush(stdout);
 
     switch (cmd>>12)
@@ -50,8 +51,8 @@ void execute(){
         }
         else{
             //return from subroutine
-            PC=stack[SP]<<8 + stack[SP+1]; //Big Eldian
-            SP -=2;
+            SP -= 2;
+            PC = stack[SP] << 8 + stack[SP+1]; //Big Eldian
         }
         break;
 
@@ -63,11 +64,12 @@ void execute(){
     case 0x2:
         //Call subroutine at 2NNN
         PC+=2;          //I store the address of the next instruction
-        stack[SP]=PC >> 8;
-        stack[SP+1]=PC & 0xFF;
+        stack[SP] = PC >> 8;
+        stack[SP+1] = PC & 0xFF;
         SP += 2;
         PC = (cmd & 0xFFF);
-        return; // We don't want to increment PC after a jump
+        // We don't want to increment PC after a jump
+        return; 
     break;
     case 0x3:
         //3XNN	Cond	if (Vx == NN)
@@ -186,17 +188,17 @@ void execute(){
             sprite = memory[I + i];
             for (int j = 0; j < 8; j++)
             {
-                oldPixel = display[registers[Y] + i][registers[X + j]];
+                oldPixel = display[(registers[Y] + i)%32][registers[X + j] % 64];
                 value = (0x80>>j) & sprite;
                 if(value){
-                    display[registers[Y] + i][registers[X] + j] ^= 1;
+                    display[(registers[Y] + i) % 32][(registers[X] + j) % 64] ^= 1;
                     flip = 1;
                     if(oldPixel){
                         registers[0xF] = 1;
                     }
                 }
                 else
-                    display[registers[Y] + i][registers[X] + j] ^= 0;
+                    display[(registers[Y] + i) % 32][(registers[X] + j) % 64] ^= 0;
             }
         }
         if(!flip) 
@@ -256,28 +258,28 @@ void execute(){
 
         case 0x29:
             X = (cmd >> 8) & 0xF;
-            I = X*5;
+            I = X * 5;
         break;
 
         case 0x33:
             //TODO: BCD
             X = (cmd >> 8) & 0xF;
-            memory[I] = registers[X]/100;
-            memory[I+1] = (registers[X]%100)/10;
-            memory[I+2] = registers[X]%10;
+            memory[I] = registers[X] / 100;
+            memory[I+1] = (registers[X] % 100) / 10;
+            memory[I+2] = registers[X] % 10;
 
         break;
 
         case 0x55:
             X = (cmd >> 8) & 0xF;
-            for(int i=0x0;i<=X;i++){
+            for(int i=0x0; i<=X; i++){
                 memory[I+i] = registers[i];
             }
         break;
 
         case 0x65:
             X = (cmd >> 8) & 0xF;
-            for(int i=0x0;i<=X;i++){
+            for(int i=0x0; i<=X; i++){
                 registers[i] = memory[I+i];
             }
 

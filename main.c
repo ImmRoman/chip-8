@@ -10,7 +10,7 @@ int delay_timer;
 int sound_timer;
 
 uint8 display[32][64];
-char romToRead[20] = "../test_opcode.8o";
+char romToRead[20] = "../3-corax+.ch8";
 
 SDL_Window *window;
 SDL_Renderer *renderer;
@@ -27,13 +27,13 @@ int main(int argc, char** argv){
     rom_t ROM = calloc(1,sizeof(rom_t));
     loadRom(romToRead,ROM);
     //Init CPU
-    init_CPU(ROM->mem,ROM->dim);
+    init_CPU(ROM);
     
     //Init gfx
     init_gfx();
     
     //Game Window
-    SDL_CreateWindowAndRenderer(SCREEN_WIDTH*SCALE , SCREEN_HEIGHT*SCALE,0,&window,&renderer);
+    SDL_CreateWindowAndRenderer(SCREEN_WIDTH * SCALE , SCREEN_HEIGHT * SCALE,0,&window,&renderer);
     SDL_SetWindowPosition(window,200,200);
  
     running = 1;
@@ -85,7 +85,7 @@ int main(int argc, char** argv){
 
                 break;
                 default:
-                
+
                 break;
             }
         }
