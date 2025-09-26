@@ -17,16 +17,34 @@ extern uint8 display[32][64];
 
 uint8 memory[0xFFF],memSize;
 uint8 stack[0xFFF];
-uint16 SP;
+uint8 SP;
 uint8 registers[0xF];
 uint16 PC;
 
 uint16 I, N, NN;
 uint8 drawMask, drawFlag;
+void debug_cpu(uint16 cmd)
+{
+    // Clear screen and move cursor to top-left
+    printf("\033[H\033[J");
 
+    printf("================ CPU DEBUG ================\n");
+    printf("PC: %04X   I: %04X   CMD: %x  ADDR: %x  SP: %x \n",
+           PC, I,cmd,PC,SP);
+
+    printf("-------------------------------------------\n");
+    for (int i = 0; i < 16; i++)
+    {
+        printf("V%X: %02X%s", i, registers[i], (i % 4 == 3) ? "\n" : "  ");
+    }
+    printf("===========================================\n");
+
+    fflush(stdout); // force immediate output
+}
 void init_CPU(rom_t rom)
 {
     PC = 0x200;
+    SP = 0x00;
     for(int i = 0x0 ; i<=0xF; i++){
         registers[i] = 0;
     }
@@ -38,27 +56,35 @@ void execute(){
     uint8 X,Y,O;
     uint16 cmd = (memory[PC]<<8) | (memory[PC+1]);
 
-    printf("\r%x - ADDR: %x   ",cmd,PC);
+    // printf("\r%x - ADDR: %x   ",cmd,PC);
+    debug_cpu(cmd);
     fflush(stdout);
-
+    X = (cmd & 0xF00) >> 8;
+    Y = (cmd & 0xF0) >> 4;
+    NN = cmd & 0xFF;
+    N = cmd & 0xF;
     switch (cmd>>12)
     {
     case 0x0:
         //I will ignore 0x0NNN
-        if(cmd==0x00E0){
+        if(cmd == 0x00E0){
             //Clear screen
             FillBackground();
         }
-        else{
+        if (cmd == 0x00EE)
+        {
             //return from subroutine
             SP -= 2;
-            PC = stack[SP] << 8 + stack[SP+1]; //Big Eldian
+            uint16 upper = stack[SP] << 8;
+            uint16 down = stack[SP + 1];
+            PC = upper + down; // Big Eldian
+            return;
         }
         break;
 
     case 0x1:
         //Jump to address 1NNN
-        PC=cmd & 0xFFF;
+        PC = (cmd & 0xFFF);
         return;
     break;
     case 0x2:
@@ -73,39 +99,32 @@ void execute(){
     break;
     case 0x3:
         //3XNN	Cond	if (Vx == NN)
-        X = (cmd & 0xF00)>>8;
-        if(registers[X]==(cmd&0xFF)){
+        if(registers[X] == (cmd&0xFF)){
             PC+=2; //Since at the end of the instructions I stil have to increase the PC
         }
     break;
     case 0x4:
         //4XNN	Cond	if (Vx != NN)
-        X = (cmd & 0xF00)>>8;
         if(registers[X]!=(cmd&0xFF)){
             PC+=2; //Since at the end of the instructions I stil have to increase the PC
         }
     break;
     case 0x5:
         //5XY0	Cond	if (Vx == Vy)
-        X = (cmd & 0xF00)>>8;
-        Y = (cmd & 0xF0)>>4;
-        if(registers[X]==registers[Y]){
+        if(registers[X] == registers[Y]){
             PC+=2;
         }
+    break;
     case 0x6:
         //6XNN	Const	Vx = NN
-        X = (cmd & 0xF00)>>8;
         registers[X]=cmd & 0xFF;
     break;
     case 0x7:
         //7XNN	Const	Vx += NN
-        X = (cmd & 0xF00)>>8;
-        registers[X]+=cmd & 0xFF;
+        registers[X] += (cmd & 0xFF);
     break;
     case 0x8:
         //8XYO
-        X = (cmd & 0xF00)>>8;
-        Y = (cmd & 0xF0)>>4;
         O = (cmd & 0xF);
 
         switch (O)
@@ -157,8 +176,9 @@ void execute(){
     break;
 
     case 0x9:
-        if(registers[X]!=registers[Y])
-            PC+=2;
+        
+        if(registers[X] != registers[Y])
+            PC += 2;
     break;
 
     case 0xA:
@@ -170,15 +190,10 @@ void execute(){
     break;
     
     case 0xC:
-        X = (cmd >> 8) & 0xF;
-        NN = cmd & 0xFF;
         registers[X] = (rand() % 256) & NN;
     break;
 
     case 0xD:
-        X = (cmd >> 8) & 0xF;
-        Y = (cmd >> 4) & 0xF;
-        N = cmd & 0xF;
         //Display draw(Vx, Vy, N rows) 
         int flip = 0;
         uint8 oldPixel = 0, sprite = 0, value = 0;
@@ -208,8 +223,6 @@ void execute(){
     break;
 
     case 0xE:
-        X = (cmd & 0xF00)>>8;
-
         if(cmd & 0xFF == 0x9E){
             if(keyboard[X])
                 PC+=2;
@@ -225,13 +238,9 @@ void execute(){
     break;
 
     case 0xF:
-        X = (cmd & 0xF00)>>8;
-        NN = (cmd & 0xFF);
-
         switch (NN)
         {
         case 0x07:
-            X = (cmd >> 8) & 0xF;
             registers[X]=delay_timer;
             break;
         
@@ -243,12 +252,10 @@ void execute(){
         break;
 
         case 0x15:
-            X = (cmd >> 8) & 0xF;
             delay_timer=registers[X];
         break;
 
         case 0x18:
-            X = (cmd >> 8) & 0xF;
             sound_timer=registers[X];
         break;
 
@@ -257,13 +264,11 @@ void execute(){
         break;
 
         case 0x29:
-            X = (cmd >> 8) & 0xF;
             I = X * 5;
         break;
 
         case 0x33:
             //TODO: BCD
-            X = (cmd >> 8) & 0xF;
             memory[I] = registers[X] / 100;
             memory[I+1] = (registers[X] % 100) / 10;
             memory[I+2] = registers[X] % 10;
@@ -271,14 +276,12 @@ void execute(){
         break;
 
         case 0x55:
-            X = (cmd >> 8) & 0xF;
             for(int i=0x0; i<=X; i++){
                 memory[I+i] = registers[i];
             }
         break;
 
         case 0x65:
-            X = (cmd >> 8) & 0xF;
             for(int i=0x0; i<=X; i++){
                 registers[i] = memory[I+i];
             }

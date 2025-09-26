@@ -4,17 +4,20 @@
 #include "gfx/gfx.h"
 #include "cpu/cpu.h"
 #include <SDL2/SDL.h>
-uint8 keyboard[16];
-//Timers, so basic they don't even need to be a thread
-int delay_timer;
-int sound_timer;
 
-uint8 display[32][64];
-char romToRead[20] = "../3-corax+.ch8";
+char romToRead[100] = "../3-corax+ .ch8";
 
 SDL_Window *window;
 SDL_Renderer *renderer;
+uint8 display[32][64];
+uint8 keyboard[16];
+extern uint8 memory[0xFFF];
+void load_sprites() ;
+void debug_memory(uint8_t *memory, int start, int length);
 
+// Timers, so basic they don't even need to be a thread
+int delay_timer;
+int sound_timer;
 
 int running;
 
@@ -28,7 +31,7 @@ int main(int argc, char** argv){
     loadRom(romToRead,ROM);
     //Init CPU
     init_CPU(ROM);
-    
+    load_sprites();
     //Init gfx
     init_gfx();
     
@@ -123,7 +126,40 @@ void loadRom(char* rom,rom_t newROM){
     
     fclose(f);
 }
+void debug_memory(uint8_t *memory, int start, int length)
+{
+    printf("\n================ MEMORY DUMP ================\n");
+    for (int i = 0; i < length; i++)
+    {
+        if (i % 16 == 0)
+            printf("\n%03X: ", start + i);
+        printf("%02X ", memory[start + i]);
+    }
+    printf("\n=============================================\n");
+}
 
+unsigned char chip8_fontset[80] =
+    {
+        0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
+        0x20, 0x60, 0x20, 0x20, 0x70, // 1
+        0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
+        0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
+        0x90, 0x90, 0xF0, 0x10, 0x10, // 4
+        0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
+        0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
+        0xF0, 0x10, 0x20, 0x40, 0x40, // 7
+        0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
+        0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
+        0xF0, 0x90, 0xF0, 0x90, 0x90, // A
+        0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
+        0xF0, 0x80, 0x80, 0x80, 0xF0, // C
+        0xE0, 0x90, 0x90, 0x90, 0xE0, // D
+        0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
+        0xF0, 0x80, 0xF0, 0x80, 0x80  // F
+};
+void load_sprites(){
+    memcpy(&memory[0x000], chip8_fontset, sizeof(unsigned char) * 80);
+}
 void HALT(){
     SDL_Quit();
 }
