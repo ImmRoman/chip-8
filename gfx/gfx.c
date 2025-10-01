@@ -21,8 +21,12 @@ int get_DrawFlag()
 {
    return dFlag;
 }
+void clean_display(){
+    memset(display, 0, sizeof(display[0][0]) * 32 * 64);
+}
 void FillBackground(){
-    SDL_SetRenderDrawColor(renderer, 112, 44, 255, 0);
+    clean_display();
+    SDL_SetRenderDrawColor(renderer, 112, 255, 255, 255);
     SDL_RenderFillRect(renderer, NULL);
     SDL_RenderPresent(renderer);
 }

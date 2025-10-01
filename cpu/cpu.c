@@ -12,8 +12,9 @@ extern SDL_Renderer *renderer;
 extern SDL_Window *window;
 extern int sound_timer;
 extern int delay_timer;
-extern int keyboard[16];
+extern uint8 keyboard[16];
 extern uint8 display[32][64];
+#define INT_MAX 0xFF
 
 uint8 memory[0xFFF],memSize;
 uint8 stack[0xFFF];
@@ -21,8 +22,8 @@ uint8 SP;
 uint8 registers[0xF];
 uint16 PC;
 
-uint16 I, N, NN;
-uint8 drawMask, drawFlag;
+uint16 cmd, X, Y, O, I, N, NN;
+uint8 overflow;
 void debug_cpu(uint16 cmd)
 {
     // Clear screen and move cursor to top-left
@@ -38,7 +39,6 @@ void debug_cpu(uint16 cmd)
         printf("V%X: %02X%s", i, registers[i], (i % 4 == 3) ? "\n" : "  ");
     }
     printf("===========================================\n");
-
     fflush(stdout); // force immediate output
 }
 void init_CPU(rom_t rom)
@@ -53,11 +53,10 @@ void init_CPU(rom_t rom)
 }
 
 void execute(){
-    uint8 X,Y,O;
-    uint16 cmd = (memory[PC]<<8) | (memory[PC+1]);
-
+    cmd = (memory[PC]<<8) | (memory[PC+1]);
+    
     // printf("\r%x - ADDR: %x   ",cmd,PC);
-    debug_cpu(cmd);
+    // debug_cpu(cmd);
     fflush(stdout);
     X = (cmd & 0xF00) >> 8;
     Y = (cmd & 0xF0) >> 4;
@@ -146,25 +145,46 @@ void execute(){
         break;
         
         case 4:
+            if (INT_MAX - registers[X] < registers[Y]){
+                registers[X] = registers[X] + registers[Y];
+                registers[0xF] = 1;
+                break;
+            }
             registers[X] = registers[X] + registers[Y];
-        break;
+            registers[0xF] = 0;
+            break;
 
         case 5:
+        if(registers[X] < registers[Y]){
             registers[X] = registers[X] - registers[Y];
+            registers[0xF] = 0;
+            break;
+        }
+        registers[X] = registers[X] - registers[Y];
+        registers[0xF] = 1;
         break;
 
         case 6:
-            registers[0xF]=registers[X] & 0x1;
+            registers[0xF] = registers[X] & 0x1;
+            if (X == 0xF)
+                break;
             registers[X] = registers[X] >> 1;
         break;
 
         case 7:
-            registers[0xF] = registers[Y] >= registers[X] ? (registers[0xF] = 1) : (registers[0xF] = 0);
+            if (registers[Y] < registers[X]){
+                registers[X] = registers[Y] - registers[X];
+                registers[0xF] = 0;
+            break;
+            }
             registers[X] = registers[Y] - registers[X];
-        break;
+            registers[0xF] = 1;
+            break;
 
-        case 0xE:
+            case 0xE:
             registers[0xF]=(registers[X] & 0x80) >> 7;
+            if(X == 0xF)
+                break;
             registers[X] = registers[X] << 1;
         break;
 
@@ -186,7 +206,7 @@ void execute(){
     break;
 
     case 0xB:
-        PC=registers[0]+ (cmd & 0xFFF);
+        PC = registers[0]+ (cmd & 0xFFF);
     break;
     
     case 0xC:
@@ -223,18 +243,18 @@ void execute(){
     break;
 
     case 0xE:
-        if(cmd & 0xFF == 0x9E){
-            if(keyboard[X])
+        if((cmd & 0xFF) == 0x9E){
+            if(keyboard[registers[X] & 0xF])
                 PC+=2;
             break;
         }
 
-        if(cmd & 0xFF == 0x9E){
-            if(!keyboard[X])
+        if((cmd & 0xFF) == 0xA1){
+            if(!keyboard[registers[X] & 0xF])
                 PC+=2;
             break;
         }
-        printf("ERROR: OP CODE %X NOT RECOGNIZED",cmd);
+        printf("ERROR: OP CODE %X NOT RECOGNIZED ",cmd);
     break;
 
     case 0xF:

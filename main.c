@@ -5,7 +5,7 @@
 #include "cpu/cpu.h"
 #include <SDL2/SDL.h>
 
-char romToRead[100] = "../3-corax+ .ch8";
+char romToRead[100] = "../6-keypad.ch8";
 
 SDL_Window *window;
 SDL_Renderer *renderer;

@@ -13,7 +13,6 @@ typedef struct{
     uint16 dim;
 } rom_s,*rom_t;
 
-
 void FillBackground();
 void drawSquare(int x,int y,int set);
 void HALT();
