@@ -265,10 +265,15 @@ void execute(){
             break;
         
         case 0x0A:
+        //Trick particolare, se non premo un tasto, torno indietro col PC
             for(int i=0;i<16;i++){
-                if(keyboard[i])
+                if(keyboard[i]){
                     registers[X]=i;
+                    PC += 2;
+                    break;
+                }
             }
+            PC -= 2;
         break;
 
         case 0x15:
@@ -288,7 +293,6 @@ void execute(){
         break;
 
         case 0x33:
-            //TODO: BCD
             memory[I] = registers[X] / 100;
             memory[I+1] = (registers[X] % 100) / 10;
             memory[I+2] = registers[X] % 10;

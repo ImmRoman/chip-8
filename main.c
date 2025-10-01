@@ -10,6 +10,8 @@ char romToRead[100] = "../6-keypad.ch8";
 SDL_Window *window;
 SDL_Renderer *renderer;
 uint8 display[32][64];
+/*Challenge: Cambia keyboard ad essere un solo uint16. al posto di avere 16 uint8
+ che avranno come soli valori 0 o 1*/
 uint8 keyboard[16];
 extern uint8 memory[0xFFF];
 void load_sprites() ;

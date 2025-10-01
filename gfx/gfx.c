@@ -26,7 +26,7 @@ void clean_display(){
 }
 void FillBackground(){
     clean_display();
-    SDL_SetRenderDrawColor(renderer, 112, 255, 255, 255);
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderFillRect(renderer, NULL);
     SDL_RenderPresent(renderer);
 }
