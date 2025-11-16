@@ -14,7 +14,7 @@ extern int sound_timer;
 extern int delay_timer;
 extern uint8 keyboard[16];
 extern uint8 display[32][64];
-#define INT_MAX 0xFF
+#define INT_MAX_CHIP 0xFF
 
 uint8 memory[0xFFF],memSize;
 uint8 stack[0xFFF];
@@ -145,7 +145,8 @@ void execute(){
         break;
         
         case 4:
-            if (INT_MAX - registers[X] < registers[Y]){
+            if (INT_MAX_CHIP - registers[X] < registers[Y])
+            {
                 registers[X] = registers[X] + registers[Y];
                 registers[0xF] = 1;
                 break;

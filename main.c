@@ -5,7 +5,8 @@
 #include "cpu/cpu.h"
 #include <SDL2/SDL.h>
 
-char romToRead[100] = "../6-keypad.ch8";
+#define EMULATOR_SPEED 1 //Put 0 to not delay the main loop
+char romToRead[100] = "../BLINKY";
 
 SDL_Window *window;
 SDL_Renderer *renderer;
@@ -13,6 +14,7 @@ uint8 display[32][64];
 /*Challenge: Cambia keyboard ad essere un solo uint16. al posto di avere 16 uint8
  che avranno come soli valori 0 o 1*/
 uint8 keyboard[16];
+
 extern uint8 memory[0xFFF];
 void load_sprites() ;
 void debug_memory(uint8_t *memory, int start, int length);
@@ -42,6 +44,7 @@ int main(int argc, char** argv){
     SDL_SetWindowPosition(window,200,200);
  
     running = 1;
+    
     while(running){
         SDL_Event event;
         while(SDL_PollEvent(&event)){
@@ -88,6 +91,11 @@ int main(int argc, char** argv){
                 if(event.key.keysym.sym == SDLK_c) keyboard[0xB]=1;
                 if(event.key.keysym.sym == SDLK_v) keyboard[0xF]=1;
 
+                if (event.key.keysym.sym == SDLK_m){
+                    running = 0;
+                    HALT();
+                }
+                
                 break;
                 default:
 
@@ -96,6 +104,7 @@ int main(int argc, char** argv){
         }
         delay_timer--;
         sound_timer--;
+        SDL_Delay(EMULATOR_SPEED);
         execute();
         draw();
     }
